@@ -33,15 +33,17 @@ import org.apache.commons.logging.LogFactory;
 import org.json.JSONObject;
 import org.pentaho.cdf.util.Parameter;
 import org.pentaho.cdf.utils.CorsUtil;
-import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
-import org.pentaho.platform.engine.security.SecurityHelper;
 
+import pt.webdetails.cpf.session.IUserSession;
+import pt.webdetails.cpf.session.PentahoSession;
 import pt.webdetails.cpf.utils.PluginIOUtils;
 
 @Path( "/pentaho-cdf/api/comments" )
 public class CommentsApi {
 
   private static final Log logger = LogFactory.getLog( CommentsApi.class );
+
+  private IUserSession userSession = new PentahoSession();
 
   @GET
   @Path( "/add" )
@@ -82,7 +84,7 @@ public class CommentsApi {
     JSONObject json;
     String result = "";
 
-    boolean isAdministrator = SecurityHelper.getInstance().isPentahoAdministrator( PentahoSessionHolder.getSession() );
+    boolean isAdministrator = new PentahoSession().isAdministrator();
 
     if ( deleted && !isAdministrator ) {
       deleted = false;
@@ -119,8 +121,8 @@ public class CommentsApi {
     JSONObject json;
     String result = "";
 
-    boolean isAdministrator = SecurityHelper.getInstance().isPentahoAdministrator( PentahoSessionHolder.getSession() );
-    boolean isAuthenticated = PentahoSessionHolder.getSession().isAuthenticated();
+    boolean isAdministrator = getUserSession().isAdministrator();
+    boolean isAuthenticated = getUserSession().isAuthenticated();
 
     if ( !isAuthenticated ) {
       String msg = "Operation not authorized: requires authentication";
@@ -158,8 +160,8 @@ public class CommentsApi {
     JSONObject json;
     String result = "";
 
-    boolean isAdministrator = SecurityHelper.getInstance().isPentahoAdministrator( PentahoSessionHolder.getSession() );
-    boolean isAuthenticated = PentahoSessionHolder.getSession().isAuthenticated();
+    boolean isAdministrator = getUserSession().isAdministrator();
+    boolean isAuthenticated = getUserSession().isAuthenticated();
 
     if ( !isAuthenticated ) {
       String msg = "Operation not authorized: requires authentication";
@@ -173,7 +175,7 @@ public class CommentsApi {
     }
 
     try {
-      json = CommentsEngine.getInstance().delete( commentId, value, getUserName(), isAdministrator );
+      json = CommentsEngine.getInstance().delete( commentId, value, getUserSession().getUserName(), isAdministrator );
       result = json.toString( 2 );
     } catch ( Exception ex ) {
       logger.error( "Error processing comment: " + ex );
@@ -187,7 +189,11 @@ public class CommentsApi {
     }
   }
 
-  private String getUserName() {
-    return PentahoSessionHolder.getSession().getName();
+  protected String getUserName(){
+    return getUserSession().getUserName();
+  }
+
+  protected IUserSession getUserSession(){
+    return userSession;
   }
 }

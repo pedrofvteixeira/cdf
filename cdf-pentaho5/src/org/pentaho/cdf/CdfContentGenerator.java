@@ -46,6 +46,7 @@ import org.pentaho.platform.engine.services.runtime.ParameterManager;
 import pt.webdetails.cpf.SimpleContentGenerator;
 import pt.webdetails.cpf.Util;
 import pt.webdetails.cpf.audit.CpfAuditHelper;
+import pt.webdetails.cpf.session.PentahoSession;
 import pt.webdetails.cpf.utils.CharsetHelper;
 import pt.webdetails.cpf.utils.MimeTypes;
 
@@ -145,8 +146,10 @@ public class CdfContentGenerator extends SimpleContentGenerator {
                                    String defaultTemplate, boolean loadTheme ) throws Exception {
     long start = System.currentTimeMillis();
 
+    IPentahoSession session = userSession != null ? userSession : new PentahoSession().getPentahoSession();
+
     UUID uuid =
-      CpfAuditHelper.startAudit( PLUGIN_ID, xcdfFilePath, getObjectName(), this.userSession, this, requestParams );
+      CpfAuditHelper.startAudit( PLUGIN_ID, xcdfFilePath, getObjectName(), session, this, requestParams );
     try {
 
       XcdfRenderer renderer = new XcdfRenderer();
@@ -172,12 +175,12 @@ public class CdfContentGenerator extends SimpleContentGenerator {
         out.write( "Unable to render dashboard".getBytes( CharsetHelper.getEncoding() ) ); //$NON-NLS-1$ //$NON-NLS-2$
       }
       long end = System.currentTimeMillis();
-      CpfAuditHelper.endAudit( PLUGIN_ID, xcdfFilePath, getObjectName(), this.userSession, this, start, uuid, end );
+      CpfAuditHelper.endAudit( PLUGIN_ID, xcdfFilePath, getObjectName(), session , this, start, uuid, end );
 
     } catch ( Exception e ) {
       e.printStackTrace();
       long end = System.currentTimeMillis();
-      CpfAuditHelper.endAudit( PLUGIN_ID, xcdfFilePath, getObjectName(), this.userSession, this, start, uuid, end );
+      CpfAuditHelper.endAudit( PLUGIN_ID, xcdfFilePath, getObjectName(), session, this, start, uuid, end );
       throw e;
     }
   }
