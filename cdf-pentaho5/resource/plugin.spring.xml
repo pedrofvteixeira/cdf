@@ -1,11 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans" xmlns:context="http://www.springframework.org/schema/context"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ws="http://jax-ws.dev.java.net/spring/core" xmlns:wss="http://jax-ws.dev.java.net/spring/servlet"
+  xmlns:pen="http://www.pentaho.com/schema/pentaho-system"
+  xmlns:util="http://www.springframework.org/schema/util"
   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
                            http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-2.5.xsd
                            http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.5.xsd
                            http://jax-ws.dev.java.net/spring/core http://jax-ws.dev.java.net/spring/core.xsd
-                           http://jax-ws.dev.java.net/spring/servlet http://jax-ws.dev.java.net/spring/servlet.xsd">
+                           http://jax-ws.dev.java.net/spring/servlet http://jax-ws.dev.java.net/spring/servlet.xsd
+                           http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.5.xsd
+                           http://www.pentaho.com/schema/pentaho-system http://www.pentaho.com/schema/pentaho-system.xsd">
 
   <context:annotation-config />
   <!-- JAX-RS beans -->
@@ -25,4 +29,103 @@
       <property name="cdfResource" value="true" />
   </bean>
   
+
+  <!-- a bean that publishes all importHandlers / mimeTypes declared here in the Pentaho platform -->
+  <bean class="org.pentaho.cdf.CdfImportHandlersPublisher" init-method="start" lazy-init="false">
+    <property name="importHandlers">
+      <util:list value-type="org.pentaho.platform.plugin.services.importer.IPlatformImportHandler">
+        <ref local="fontsImportHandler" />
+        <!-- add more importHandlers here -->
+      </util:list>
+    </property>
+    <property name="mimeTypeResolvers">
+      <util:list value-type="org.pentaho.platform.api.mimetype.IMimeType">
+        <ref local="eotMimeType" />
+        <ref local="ttfMimeType" />
+        <ref local="woffMimeType" />
+        <ref local="otfMimeType" />
+        <!-- add more mimeTypes here -->
+      </util:list>
+    </property>
+  </bean>
+
+  <!-- ========================================= -->
+  <!--           FILE IMPORT HANDLERS            -->
+  <!-- ========================================= -->
+
+  <!-- declared in pentahoObject.spring.xml, referenced via the pen:bean -->
+  <pen:bean id="repository" class="org.pentaho.platform.api.repository2.unified.IUnifiedRepository" /> 
+
+  <!-- we'll just use the platform's standard importHandler, but we could've also implemented our own IPlatformImportHander -->
+  <bean id="fontsImportHandler" class="org.pentaho.platform.plugin.services.importer.RepositoryFileImportFileHandler"> 
+    <constructor-arg>
+      <util:list value-type="org.pentaho.platform.plugin.services.importer.mimeType.MimeType">
+        <ref bean="eotMimeType" />
+        <ref bean="ttfMimeType" />
+        <ref bean="woffMimeType" />
+        <ref bean="otfMimeType" />
+        <!-- add more mimeTypes here as needed -->
+      </util:list>
+    </constructor-arg>
+    <property name="repository" ref="repository" />
+    <property name="defaultAclHandler">
+      <bean class="org.pentaho.platform.repository2.unified.jcr.InheritDefaultAclHandler" /> <!-- we'll use the default acl handler -->
+    </property>
+  </bean>
+
+  <!-- ========================================= -->
+  <!--          MIME TYPE DECLARATIONS           -->
+  <!-- ========================================= -->
+
+  <bean id="eotMimeType" class="org.pentaho.platform.core.mimetype.MimeType">
+    <constructor-arg value="application/vnd.ms-fontobject" /> <!-- the mimeType -->
+    <constructor-arg>
+      <util:list>
+        <value>eot</value>
+      </util:list>
+    </constructor-arg>
+    <property name="hidden" value="false" />
+    <property name="converter" ref="streamConverter" />
+  </bean>
+
+  <bean id="ttfMimeType" class="org.pentaho.platform.core.mimetype.MimeType">
+    <constructor-arg value="application/octet-stream" /> <!-- the mimeType -->
+    <constructor-arg>
+      <util:list>
+        <value>ttf</value>
+      </util:list>
+    </constructor-arg>
+    <property name="hidden" value="false" />
+    <property name="converter" ref="streamConverter" />
+  </bean>
+
+  <bean id="woffMimeType" class="org.pentaho.platform.core.mimetype.MimeType">
+    <constructor-arg value="application/x-font-woff" /> <!-- the mimeType -->
+    <constructor-arg>
+      <util:list>
+        <value>woff</value>
+      </util:list>
+    </constructor-arg>
+    <property name="hidden" value="false" />
+    <property name="converter" ref="streamConverter" />
+  </bean>
+
+  <bean id="otfMimeType" class="org.pentaho.platform.core.mimetype.MimeType">
+    <constructor-arg value="application/x-font-otf" /> <!-- the mimeType -->
+    <constructor-arg>
+      <util:list>
+        <value>otf</value>
+      </util:list>
+    </constructor-arg>
+    <property name="hidden" value="false" />
+    <property name="converter" ref="streamConverter" />
+  </bean>
+
+  <!-- we'll use the (standard) stream converter, defined in importExport.xml -->
+  <pen:bean id="streamConverter" class="org.pentaho.platform.api.repository2.unified.Converter">
+    <pen:attributes>
+      <pen:attr key="id" value="streamConverter"/> 
+    </pen:attributes>
+  </pen:bean>
+
 </beans>
